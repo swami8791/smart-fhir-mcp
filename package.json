@@ -1,0 +1,29 @@
+{
+  "name": "smart-fhir-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "SMART on FHIR MCP v1 — personal team FHIR connector. Not KeepAfter. Not hermes-os. Not a medical product.",
+  "main": "dist/index.js",
+  "bin": {
+    "smart-fhir-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "prove": "node scripts/prove.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.9",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

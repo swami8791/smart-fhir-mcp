@@ -1,0 +1,8 @@
+node_modules/
+dist/
+audit/*.jsonl
+audit/audit.jsonl
+*.log
+.env
+.env.*
+VERIFICATION.md
