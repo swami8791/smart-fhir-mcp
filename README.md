@@ -136,6 +136,6 @@ Audit lines: ts, tool, iss, mode, resourceType, id?, http_status, entry_count?. 
 
 <div align="center">
 
-Private. No PHI. No live EHR.
+No PHI. No live EHR.
 
 </div>
