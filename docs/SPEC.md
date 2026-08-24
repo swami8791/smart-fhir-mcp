@@ -3,7 +3,7 @@
 **Date:** 2026-08-24 (early morning CT)
 **Design only.** Builder implements on the box. No migrate. No CloudAgent. No GitHub write in this turn.
 **Deadline:** Mon 2026-08-24 8:00am America/Chicago. Hard cap Tue 8:00am if blocked.
-**Home:** `/workspace/smart-fhir-mcp` on the box. Prefer later private repo `swami8791/smart-fhir-mcp`. **Not** KeepAfter. **Not** hermes-os.
+**Home:** https://github.com/swami8791/smart-fhir-mcp (public). **Not** KeepAfter. **Not** hermes-os.
 **Catalog:** Cursor SearchPlugins for FHIR / SMART FHIR / HL7 EHR returned **no** FHIR connector (2026-08-24). Path is local stdio via `AddMcpServer` (`command` / `args` / `env`).
 
 KeepAfter is wellness, not medical. hermes-os is the personal OS. This connector is **neither product**. Personal team.
@@ -160,7 +160,7 @@ This add changes the user account. Command Center confirms first. Architect does
 
 /workspace/smart-fhir-mcp/ is a new tree. package.json plus TypeScript plus the current MCP SDK. FHIR HTTP via fetch. If time is short, ship open plus bearer plus smart_discover first. Leave backend_jwt as a stub that errors when env is not set. That still meets morning if open search works.
 
-No clone onto Mini or MacBook. No second database. Optional later private repo swami8791/smart-fhir-mcp. Do not block 8am on GitHub. Escalate if a repo-create token is required.
+No clone onto Mini or MacBook. No second database. Repo is public: https://github.com/swami8791/smart-fhir-mcp.
 
 ## Out of scope (v1)
 
