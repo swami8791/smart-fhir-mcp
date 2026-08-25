@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "SMART on FHIR MCP v1 — personal team FHIR connector. Not KeepAfter. Not hermes-os. Not a medical product.",
+  "license": "MIT",
   "main": "dist/index.js",
   "bin": {
     "smart-fhir-mcp": "dist/index.js"

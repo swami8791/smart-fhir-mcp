@@ -71,7 +71,7 @@ export function parseConfig(
   }
 
   const auditPath =
-    env.FHIR_AUDIT_PATH ?? "/workspace/smart-fhir-mcp/audit/audit.jsonl";
+    env.FHIR_AUDIT_PATH ?? "./audit/audit.jsonl";
 
   const config: Config = {
     iss,

@@ -114,7 +114,7 @@ Auth failure shape: `{ ok: false, http_status, issue?, error? }`. Never a synthe
 | FHIR_VERSION | R4 | Reject anything else |
 | FHIR_AUTH_MODE | open | open / bearer / backend_jwt |
 | FHIR_WRITE | off | Writes stay off in v1 |
-| FHIR_AUDIT_PATH | `/workspace/smart-fhir-mcp/audit/audit.jsonl` | Append-only JSONL; set `./audit/audit.jsonl` locally |
+| FHIR_AUDIT_PATH | `./audit/audit.jsonl` | Append-only JSONL |
 | FHIR_ACCESS_TOKEN | unset | Bearer only |
 | FHIR_CLIENT_ID | unset | Backend Services |
 | SMART_CLIENT_ID | unset | Alias of FHIR_CLIENT_ID |
