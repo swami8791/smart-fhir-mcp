@@ -1,10 +1,11 @@
+import { generateKeyPairSync } from "node:crypto";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AuditLog } from "../src/audit.js";
 import { parseConfig } from "../src/config.js";
-import { FhirClient } from "../src/fhir-client.js";
+import { FhirClient, signBackendJwt } from "../src/fhir-client.js";
 import {
   ALLOWLIST_ERROR,
   parseToolJson,
@@ -13,7 +14,7 @@ import {
   runFhirSearch,
   runSmartDiscover,
 } from "../src/tools.js";
-import { DEFAULT_ISS, type Config } from "../src/types.js";
+import { DEFAULT_ISS, EPIC_SANDBOX_ISS, type Config } from "../src/types.js";
 
 function tempAudit(): string {
   return join(mkdtempSync(join(tmpdir(), "smart-fhir-audit-")), "audit.jsonl");
@@ -73,6 +74,19 @@ describe("startup parseConfig", () => {
     if (!r.ok) expect(r.error).toMatch(/allowlist/);
   });
 
+  it("refuses production Oracle ISS", () => {
+    const r = parseConfig({
+      FHIR_ISS: "https://fhir-ehr.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d",
+    });
+    expect(r.ok).toBe(false);
+  });
+
+  it("accepts Epic sandbox ISS", () => {
+    const r = parseConfig({ FHIR_ISS: EPIC_SANDBOX_ISS + "/" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.config.iss).toBe(EPIC_SANDBOX_ISS);
+  });
+
   it("normalizes trailing slash on allowlisted ISS", () => {
     const r = parseConfig({ FHIR_ISS: "https://hapi.fhir.org/baseR4/" });
     expect(r.ok).toBe(true);
@@ -95,6 +109,16 @@ describe("startup parseConfig", () => {
       FHIR_CLIENT_ID: "example-not-used",
     });
     expect(r.ok).toBe(false);
+  });
+
+  it("backend_jwt without kid errors", () => {
+    const r = parseConfig({
+      FHIR_AUTH_MODE: "backend_jwt",
+      FHIR_CLIENT_ID: "example-not-used",
+      FHIR_PRIVATE_KEY_PEM: "-----BEGIN PRIVATE KEY-----\nnot-a-real-key\n-----END PRIVATE KEY-----",
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/FHIR_JWT_KID/);
   });
 
   it("write stays off even if FHIR_WRITE=on on an allowlisted ISS", () => {
@@ -231,6 +255,30 @@ describe("auth failure", () => {
     expect(out.ok).toBe(false);
     expect(out.error).toMatch(/FHIR_CLIENT_ID|FHIR_PRIVATE_KEY_PEM/);
     expect(fetchFn).not.toHaveBeenCalled();
+  });
+});
+
+describe("backend JWT header", () => {
+  it("embeds kid and nbf; never invents a client id", () => {
+    const { privateKey } = generateKeyPairSync("rsa", {
+      modulusLength: 2048,
+      privateKeyEncoding: { type: "pkcs8", format: "pem" },
+      publicKeyEncoding: { type: "spki", format: "pem" },
+    });
+    const token = signBackendJwt(
+      "sandbox-client",
+      privateKey,
+      "https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token",
+      { kid: "test-kid-1" },
+    );
+    const [h] = token.split(".");
+    const header = JSON.parse(Buffer.from(h, "base64url").toString("utf8")) as {
+      alg: string;
+      kid?: string;
+    };
+    expect(header.alg).toBe("RS384");
+    expect(header.kid).toBe("test-kid-1");
+    expect(token).not.toMatch(/BEGIN/);
   });
 });
 
