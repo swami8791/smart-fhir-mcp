@@ -55,13 +55,15 @@ FHIR_AUDIT_PATH = ./audit/audit.jsonl
 
 Do not put secret values in the repo. No public HTTP port. Do not bind TCP.
 
+Vendor sandbox (Epic / Oracle Health) is `backend_jwt` plus a registered non-production `client_id`. See `docs/SANDBOX-EMR.md`.
+
 ### Morning shortcut (same env)
 
 ```bash
 npx -y tsx src/index.ts
 ```
 
-See `package.json` scripts: install, build, test, prove.
+See `package.json` scripts: install, build, test, prove, keygen.
 
 ## Tools
 
@@ -86,21 +88,24 @@ Four tools. No create / update / delete.
 | FHIR **R4** (v1) | https://hl7.org/fhir/R4/ | FHIR Release 4, **4.0.1**. Resource model. |
 | SMART App Launch **2.2.0** (STU 2.2) | https://hl7.org/fhir/smart-app-launch/ | Current published SMART IG. **Based on FHIR R4.** |
 | App launch + authorization | https://hl7.org/fhir/smart-app-launch/app-launch.html | Discovery, standalone/EHR launch, PKCE, token. **App Launch (code+PKCE) is out of v1.** |
-| Backend Services | https://hl7.org/fhir/smart-app-launch/backend-services.html | client_credentials + private-key JWT. Implemented; unused unless env is set. |
+| Backend Services | https://hl7.org/fhir/smart-app-launch/backend-services.html | client_credentials + private-key JWT. |
 
 **ISS allowlist** (trailing slash stripped, anything else refused):
 
 - `https://launch.smarthealthit.org/v/r4/fhir` (default)
 - `https://r4.smarthealthit.org`
 - `https://hapi.fhir.org/baseR4`
+- `https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4` (Epic sandbox)
+- `https://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d` (Oracle open sandbox)
+- `https://fhir-ehr-code.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d` (Oracle secure sandbox)
 
-Set `FHIR_ISS` to another allowlisted base to point at a later ISS. A new ISS needs a review first. Do not point this at a live EHR without that review plus a real `client_id`.
+Production EHR ISS is refused. A new ISS needs a review first.
 
 | FHIR_AUTH_MODE | Behavior |
 | --- | --- |
 | `open` (default) | Discover, then FHIR GET without Authorization. Discovery 404 is not fatal in open (logged; continue). 401/403 FHIR → `{ ok: false, http_status, ... }`. |
 | `bearer` | Same discovery. FHIR GET with Authorization Bearer token. |
-| `backend_jwt` | Only if both `FHIR_CLIENT_ID` (or `SMART_CLIENT_ID`) and `FHIR_PRIVATE_KEY_PEM` exist. SMART Backend Services JWT. Missing env → refuse to start. Does not invent credentials. |
+| `backend_jwt` | Requires `FHIR_CLIENT_ID`, `FHIR_PRIVATE_KEY_PEM`, and `FHIR_JWT_KID`. SMART Backend Services JWT. Missing env → refuse to start. Does not invent credentials. |
 
 App Launch (code+PKCE) is **out**. `FHIR_REDIRECT_URI` is reserved and unused.
 
@@ -119,7 +124,8 @@ Auth failure shape: `{ ok: false, http_status, issue?, error? }`. Never a synthe
 | FHIR_CLIENT_ID | unset | Backend Services |
 | SMART_CLIENT_ID | unset | Alias of FHIR_CLIENT_ID |
 | FHIR_PRIVATE_KEY_PEM | unset | Backend Services JWT |
-| FHIR_JWKS_URL | unset | Reserved if an EHR wants JWKS |
+| FHIR_JWT_KID | unset | Required in backend_jwt |
+| FHIR_JWKS_URL | unset | Optional `jku` on the JWT |
 | FHIR_SCOPE | five system/*.rs types | JWT mode override |
 | FHIR_REDIRECT_URI | unset | Reserved for later App Launch |
 
