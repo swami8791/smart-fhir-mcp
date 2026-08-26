@@ -8,13 +8,20 @@ export const RESOURCE_TYPES = [
 
 export type ResourceType = (typeof RESOURCE_TYPES)[number];
 
+/** Public synthetic + vendor sandboxes only. No production EHR ISS. */
 export const ALLOWED_ISS = [
   "https://launch.smarthealthit.org/v/r4/fhir",
   "https://r4.smarthealthit.org",
   "https://hapi.fhir.org/baseR4",
+  "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4",
+  "https://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d",
+  "https://fhir-ehr-code.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d",
 ] as const;
 
 export const DEFAULT_ISS = "https://launch.smarthealthit.org/v/r4/fhir";
+
+export const EPIC_SANDBOX_ISS =
+  "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4";
 
 export const DEFAULT_SCOPE =
   "system/Patient.rs system/Observation.rs system/Condition.rs system/MedicationRequest.rs system/Encounter.rs";
@@ -30,6 +37,7 @@ export interface Config {
   accessToken?: string;
   clientId?: string;
   privateKeyPem?: string;
+  jwtKid?: string;
   jwksUrl?: string;
   scope: string;
   redirectUri?: string;

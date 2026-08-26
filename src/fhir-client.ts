@@ -12,7 +12,7 @@ export type FetchFn = typeof fetch;
 
 const FHIR_ACCEPT = "application/fhir+json";
 const JSON_ACCEPT = "application/json";
-const USER_AGENT = "smart-fhir-mcp/1.0";
+const USER_AGENT = "smart-fhir-mcp/1.1";
 const FETCH_MS = 20_000;
 
 export function snippet(text: string, max = 400): string {
@@ -41,18 +41,22 @@ export function signBackendJwt(
   clientId: string,
   privateKeyPem: string,
   tokenEndpoint: string,
+  opts?: { kid?: string; jku?: string },
 ): string {
   const key = createPrivateKey(privateKeyPem);
   const type = key.asymmetricKeyType;
   const alg = type === "ec" ? "ES384" : "RS384";
   const now = Math.floor(Date.now() / 1000);
-  const header = { alg, typ: "JWT" };
+  const header: Record<string, string> = { alg, typ: "JWT" };
+  if (opts?.kid) header.kid = opts.kid;
+  if (opts?.jku) header.jku = opts.jku;
   const payload = {
     iss: clientId,
     sub: clientId,
     aud: tokenEndpoint,
     jti: randomUUID(),
     iat: now,
+    nbf: now,
     exp: now + 300,
   };
   const data = `${base64urlJson(header)}.${base64urlJson(payload)}`;
@@ -119,12 +123,16 @@ export class FhirClient {
     }
     const url = `${resolved.iss}/.well-known/smart-configuration`;
     try {
+      const headers: Record<string, string> = {
+        Accept: JSON_ACCEPT,
+        "User-Agent": USER_AGENT,
+      };
+      if (this.config.clientId && resolved.iss.includes("fhir.epic.com")) {
+        headers["Epic-Client-ID"] = this.config.clientId;
+      }
       const { status, json, text } = await this.doFetch(url, {
         method: "GET",
-        headers: {
-          Accept: JSON_ACCEPT,
-          "User-Agent": USER_AGENT,
-        },
+        headers,
       });
       if (status >= 200 && status < 300 && json && typeof json === "object") {
         const parsed = json as SmartConfiguration;
@@ -156,9 +164,6 @@ export class FhirClient {
     }
   }
 
-  /**
-   * Open-mode discovery 404 is not fatal: log and continue.
-   */
   async warmupDiscovery(): Promise<void> {
     const result = await this.discover();
     if ("ok" in result && result.ok === false) {
@@ -191,12 +196,20 @@ export class FhirClient {
       return `Bearer ${this.config.accessToken}`;
     }
 
-    // backend_jwt
     if (!this.config.clientId || !this.config.privateKeyPem) {
       const err: AuthError = {
         ok: false,
         http_status: 0,
         error: "backend_jwt requires FHIR_CLIENT_ID (or SMART_CLIENT_ID) and FHIR_PRIVATE_KEY_PEM",
+      };
+      this.lastError = err.error;
+      return err;
+    }
+    if (!this.config.jwtKid) {
+      const err: AuthError = {
+        ok: false,
+        http_status: 0,
+        error: "backend_jwt requires FHIR_JWT_KID matching the registered public JWK",
       };
       this.lastError = err.error;
       return err;
@@ -225,7 +238,10 @@ export class FhirClient {
 
     let assertion: string;
     try {
-      assertion = signBackendJwt(this.config.clientId, this.config.privateKeyPem, tokenEndpoint);
+      assertion = signBackendJwt(this.config.clientId, this.config.privateKeyPem, tokenEndpoint, {
+        kid: this.config.jwtKid,
+        jku: this.config.jwksUrl,
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       const err: AuthError = { ok: false, http_status: 0, error: `JWT sign failed: ${msg}` };
@@ -277,6 +293,9 @@ export class FhirClient {
       Accept: FHIR_ACCEPT,
       "User-Agent": USER_AGENT,
     };
+    if (this.config.clientId && iss.includes("fhir.epic.com")) {
+      headers["Epic-Client-ID"] = this.config.clientId;
+    }
     const auth = await this.authorizationHeader(iss);
     if (auth && typeof auth === "object" && auth.ok === false) return auth;
     if (typeof auth === "string") headers.Authorization = auth;
@@ -404,7 +423,7 @@ export class FhirClient {
         : this.config.authMode === "backend_jwt"
           ? Boolean(this.tokenCache?.access_token)
           : false;
-    const out = {
+    return {
       mode: this.config.authMode,
       iss: this.config.iss,
       fhir_version: "R4" as const,
@@ -413,6 +432,5 @@ export class FhirClient {
       discovery_ok: this.discoveryOk,
       ...(this.lastError ? { last_error: this.lastError } : {}),
     };
-    return out;
   }
 }

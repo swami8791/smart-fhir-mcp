@@ -59,19 +59,26 @@ export function parseConfig(
 
   const clientId = env.FHIR_CLIENT_ID || env.SMART_CLIENT_ID || undefined;
   const privateKeyPem = env.FHIR_PRIVATE_KEY_PEM || undefined;
+  const jwtKid = env.FHIR_JWT_KID || undefined;
 
   if (authMode === "backend_jwt") {
     if (!clientId || !privateKeyPem) {
       return {
         ok: false,
         error:
-          "backend_jwt requires FHIR_CLIENT_ID (or SMART_CLIENT_ID) and FHIR_PRIVATE_KEY_PEM. Do not invent credentials. Morning open mode does not need these.",
+          "backend_jwt requires FHIR_CLIENT_ID (or SMART_CLIENT_ID) and FHIR_PRIVATE_KEY_PEM. Do not invent credentials.",
+      };
+    }
+    if (!jwtKid) {
+      return {
+        ok: false,
+        error:
+          "backend_jwt requires FHIR_JWT_KID matching the public JWK registered with the sandbox. Do not invent a kid.",
       };
     }
   }
 
-  const auditPath =
-    env.FHIR_AUDIT_PATH ?? "./audit/audit.jsonl";
+  const auditPath = env.FHIR_AUDIT_PATH ?? "./audit/audit.jsonl";
 
   const config: Config = {
     iss,
@@ -82,6 +89,7 @@ export function parseConfig(
     accessToken: env.FHIR_ACCESS_TOKEN || undefined,
     clientId,
     privateKeyPem,
+    jwtKid,
     jwksUrl: env.FHIR_JWKS_URL || undefined,
     scope: env.FHIR_SCOPE || DEFAULT_SCOPE,
     redirectUri: env.FHIR_REDIRECT_URI || undefined,
