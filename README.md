@@ -55,7 +55,7 @@ FHIR_AUDIT_PATH = ./audit/audit.jsonl
 
 Do not put secret values in the repo. No public HTTP port. Do not bind TCP.
 
-Vendor sandbox (Epic / Oracle Health) is `backend_jwt` plus a registered non-production `client_id`. See `docs/SANDBOX-EMR.md`.
+Vendor sandbox (Epic / Oracle Health) is `backend_jwt` plus a registered non-production `client_id`. See `docs/SANDBOX-EMR.md`. Epic sandbox prove progress log: `docs/EPIC-SANDBOX-PROVE-PROGRESS.md`.
 
 ### Morning shortcut (same env)
 
