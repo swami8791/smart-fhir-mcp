@@ -9,6 +9,8 @@ export const discoverInput = z.object({
   iss: z.string().optional(),
 });
 
+export const authStatusInput = z.object({}).strict();
+
 export const searchInput = z.object({
   resourceType: z.string(),
   iss: z.string().optional(),

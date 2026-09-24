@@ -282,6 +282,34 @@ describe("backend JWT header", () => {
   });
 });
 
+describe("fhir_read", () => {
+  it("returns the mocked resource and audits the call as fhir_read", async () => {
+    const observation = {
+      resourceType: "Observation",
+      id: "obs-1",
+      status: "final",
+      code: { text: "mock" },
+    };
+    const fetchFn = vi.fn(async (input: RequestInfo | URL) => {
+      expect(String(input)).toContain("/Observation/obs-1");
+      return jsonResponse(200, observation);
+    });
+    const c = ctx(baseConfig(), fetchFn);
+    const out = parseToolJson(
+      await runFhirRead({ resourceType: "Observation", id: "obs-1" }, c),
+    ) as Record<string, unknown>;
+    expect(out.ok).not.toBe(false);
+    expect(out.resourceType).toBe("Observation");
+    expect(out.id).toBe("obs-1");
+    const raw = readFileSync(c.path, "utf8").trim();
+    const line = JSON.parse(raw) as Record<string, unknown>;
+    expect(line.tool).toBe("fhir_read");
+    expect(line.resourceType).toBe("Observation");
+    expect(line.id).toBe("obs-1");
+    expect(line.http_status).toBe(200);
+  });
+});
+
 describe("fhir_auth_status", () => {
   it("reports write off and never prints token", async () => {
     const fetchFn = vi.fn();

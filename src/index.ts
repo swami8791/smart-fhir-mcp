@@ -5,6 +5,7 @@ import { AuditLog } from "./audit.js";
 import { mustLoadConfig } from "./config.js";
 import { FhirClient } from "./fhir-client.js";
 import {
+  authStatusInput,
   discoverInput,
   readInput,
   runFhirAuthStatus,
@@ -34,6 +35,12 @@ async function main(): Promise<void> {
       description:
         "GET {iss}/.well-known/smart-configuration (SMART App Launch 2.2.0). Optional iss must be v1-allowlisted. Does not invent endpoints.",
       inputSchema: discoverInput,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
     },
     async (args) => runSmartDiscover(args, ctx),
   );
@@ -44,6 +51,13 @@ async function main(): Promise<void> {
       title: "FHIR auth status",
       description:
         "Report mode, ISS, R4 lock, write=off, token_present, discovery_ok. Never prints token or PEM.",
+      inputSchema: authStatusInput,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async () => runFhirAuthStatus({}, ctx),
   );
@@ -55,6 +69,12 @@ async function main(): Promise<void> {
       description:
         "GET {iss}/{resourceType} as FHIR R4 searchset. resourceType allowlist: Patient, Observation, Condition, MedicationRequest, Encounter. _count default 10 max 50. One page only. Does not invent Patients.",
       inputSchema: searchInput,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
     },
     async (args) => runFhirSearch(args, ctx),
   );
@@ -66,6 +86,12 @@ async function main(): Promise<void> {
       description:
         "GET {iss}/{resourceType}/{id} as FHIR R4. 404 is not found, not a made-up resource. Same resourceType allowlist as search.",
       inputSchema: readInput,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
     },
     async (args) => runFhirRead(args, ctx),
   );
