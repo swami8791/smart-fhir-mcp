@@ -39,3 +39,9 @@ npm run keygen
 Upload the printed `jwks` to the sandbox. Keep the PEM out of git.
 
 Oracle open sandbox can stay `FHIR_AUTH_MODE=open` (read-only, no token).
+
+## Progress log
+
+Epic sandbox Backend Services prove: see [EPIC-SANDBOX-PROVE-PROGRESS.md](./EPIC-SANDBOX-PROVE-PROGRESS.md) (2026-09-22).
+
+Current state: JWKS upload to the non-production Backend Systems app is waiting on the operator. Live prove has not started. Non-production only.
