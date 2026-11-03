@@ -5,4 +5,5 @@ audit/audit.jsonl
 *.log
 .env
 .env.*
+!.env.example
 VERIFICATION.md
