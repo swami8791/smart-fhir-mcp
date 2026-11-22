@@ -1,0 +1,44 @@
+name: One-time dependency remediation
+
+on:
+  push:
+    branches: [security/dependency-audit-gate-20261121]
+    paths:
+      - '.github/workflows/one-time-remediation.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  remediate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: security/dependency-audit-gate-20261121
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependency updates including patched Zod major
+        run: |
+          npm install --package-lock-only 'zod@^4.6.7'
+          npm audit fix --package-lock-only || true
+          npm ci --ignore-scripts
+      - name: Build and test
+        run: |
+          npm run build
+          npm test
+      - name: Production security audit
+        run: npm audit --omit=dev --audit-level=high
+      - name: Commit updated dependency manifests
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'fix(deps): patch audited production dependency vulnerabilities'
+            git push origin HEAD:security/dependency-audit-gate-20261121
+          fi
