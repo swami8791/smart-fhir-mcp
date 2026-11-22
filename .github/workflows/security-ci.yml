@@ -9,30 +9,21 @@ on:
     - cron: '17 9 * * 1'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
-      - name: Remediate dependency lockfile for this PR only
-        if: github.event_name == 'pull_request' && github.head_ref == 'security/dependency-audit-gate-20261121'
-        run: |
-          npm install --package-lock-only 'zod@^4.6.7'
-          npm audit fix --package-lock-only || true
-          npm ci --ignore-scripts
       - name: Install exact locked dependencies
-        if: github.event_name != 'pull_request' || github.head_ref != 'security/dependency-audit-gate-20261121'
         run: npm ci --ignore-scripts
       - name: Audit production dependencies (high and critical)
         run: npm audit --omit=dev --audit-level=high
@@ -40,13 +31,3 @@ jobs:
         run: npm run build
       - name: Test
         run: npm test
-      - name: Commit fixes to PR branch if all tests pass
-        if: github.event_name == 'pull_request' && github.head_ref == 'security/dependency-audit-gate-20261121'
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add package.json package-lock.json
-          if ! git diff --cached --quiet; then
-            git commit -m 'fix(deps): patch audited production vulnerabilities'
-            git push origin HEAD:security/dependency-audit-gate-20261121
-          fi
